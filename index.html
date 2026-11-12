@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Treino de Matemática</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
+<style>
+  :root { --fundo:#f3f6ff; --cartao:#ffffff; --texto:#2d2a3e; --suave:#7d7a90; --azul:#3a5bd9; --certo:#21a663; --errado:#e0453a; --amarelo:#ffc93c;
+    --fonte:"Fredoka","Arial Rounded MT Bold","Trebuchet MS",sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--fundo); color: var(--texto); font-family: var(--fonte); -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    padding: calc(10px + env(safe-area-inset-top,0px)) max(14px, env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(14px, env(safe-area-inset-left,0px));
+    display: flex; flex-direction: column; align-items: center; }
+  .wrap { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  h1 { margin: 0; font-size: 26px; text-align: center; color: var(--azul); }
+  .linha { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .op { font: 700 26px var(--fonte); width: 64px; height: 56px; border: 0; border-radius: 14px; background: #dfe5fb; color: var(--azul); cursor: pointer; }
+  .op.on { background: var(--azul); color: #fff; }
+  .op.mix { width: auto; padding: 0 16px; font-size: 18px; }
+  .nivel { font: 600 16px var(--fonte); padding: 8px 14px; border: 0; border-radius: 12px; background: #e9e7f2; color: var(--texto); cursor: pointer; }
+  .nivel.on { background: var(--amarelo); }
+  .placar { display: flex; justify-content: center; gap: 18px; font-size: 18px; color: var(--suave); }
+  .placar b { color: var(--texto); }
+  .placar { align-items: center; flex-wrap: wrap; }
+  #zerar { font: 600 15px var(--fonte); padding: 6px 14px; border: 0; border-radius: 10px; background: #e9e7f2; color: var(--errado); cursor: pointer; }
+  .cartao { background: var(--cartao); border-radius: 24px; padding: 24px 16px; box-shadow: 0 6px 20px rgba(58,91,217,.12); text-align: center; }
+  #conta.problema { font-size: min(6.2vw, 26px); font-weight: 600; line-height: 1.4; letter-spacing: 0; text-align: left; }
+  .modo { font: 600 17px var(--fonte); padding: 10px 16px; border: 0; border-radius: 12px; background: #e9e7f2; color: var(--texto); cursor: pointer; }
+  .modo.on { background: var(--certo); color: #fff; }
+  #conta { font-size: min(16vw, 72px); font-weight: 700; letter-spacing: 1px; }
+  #msg { min-height: 34px; font-size: 22px; font-weight: 600; margin-top: 6px; }
+  #msg.certo { color: var(--certo); } #msg.errado { color: var(--errado); }
+  .respostas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .resp { font: 700 min(10vw, 40px) var(--fonte); padding: 18px 0; border: 0; border-radius: 18px; background: #fff; color: var(--texto); box-shadow: 0 3px 0 #cfd6f2; cursor: pointer; }
+  .resp.certo { background: var(--certo); color: #fff; box-shadow: none; }
+  .resp.errado { background: var(--errado); color: #fff; box-shadow: none; }
+  .resp:disabled { cursor: default; }
+  #prox { font: 700 22px var(--fonte); padding: 14px; border: 0; border-radius: 16px; background: var(--azul); color: #fff; cursor: pointer; }
+  #estrelas { text-align: center; font-size: 24px; min-height: 30px; }
+  button:focus-visible { outline: 3px solid var(--amarelo); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+  .fin-topo { display: flex; flex-direction: column; gap: 6px; }
+  .fin-barra { height: 14px; background: #e3e7f7; border-radius: 8px; overflow: hidden; }
+  .fin-barra div { height: 100%; background: var(--certo); }
+  .fin-cont { text-align: center; color: var(--suave); }
+  .fin-mod { font-size: 19px; font-weight: 700; color: var(--azul); margin: 10px 0 2px; }
+  .fin-lista { display: flex; flex-direction: column; gap: 8px; }
+  .fin-item { display: flex; gap: 10px; align-items: center; text-align: left; font: 600 18px var(--fonte); padding: 14px; border: 0; border-radius: 14px; background: #fff; color: var(--texto); box-shadow: 0 2px 0 #d7ddf3; cursor: pointer; }
+  .fin-item.trava { opacity: .45; cursor: default; }
+  .fin-item.atual { box-shadow: 0 0 0 3px var(--amarelo); }
+  .fin-conto { text-align: left; } .fin-conto h2 { margin: 0 0 8px; color: var(--azul); font-size: 22px; } .fin-conto p { font-size: 19px; line-height: 1.55; margin: 0; }
+  .fin-num { color: var(--suave); font-size: 14px; margin-bottom: 6px; }
+  .fin-p { font-size: 21px; font-weight: 600; line-height: 1.4; }
+  #finMsg { margin-top: 10px; font-size: 18px; font-weight: 600; } #finMsg.certo { color: var(--certo); } #finMsg.errado { color: var(--errado); }
+  .fin-ops { display: flex; flex-direction: column; gap: 10px; }
+  .fin-op { font-size: 19px !important; padding: 14px !important; text-align: left; }
+  .fin-acao { font: 700 20px var(--fonte); padding: 14px; border: 0; border-radius: 16px; background: var(--azul); color: #fff; cursor: pointer; }
+  .fin-voltar, .fin-zerar { font: 600 16px var(--fonte); padding: 10px; border: 0; border-radius: 12px; background: transparent; color: var(--suave); cursor: pointer; }
+  .wrap { overflow-y: auto; }
+  body { overflow-y: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Treino de Matemática</h1>
+  <div class="linha" id="modos">
+    <button class="modo on" data-m="contas">Contas</button>
+    <button class="modo" data-m="problemas">Probleminhas</button>
+    <button class="modo" data-m="dinheiro">Dinheiro 💰</button>
+  </div>
+  <div class="linha" id="ops">
+    <button class="op on" data-op="+">+</button>
+    <button class="op" data-op="-">−</button>
+    <button class="op" data-op="x">×</button>
+    <button class="op" data-op="/">÷</button>
+    <button class="op mix" data-op="mix">Misturar</button>
+  </div>
+  <div class="linha" id="niveis">
+    <button class="nivel on" data-n="1">Fácil</button>
+    <button class="nivel" data-n="2">Médio</button>
+    <button class="nivel" data-n="3">Difícil</button>
+  </div>
+  <div class="placar"><span>Acertos: <b id="acertos">0</b></span><span>Erros: <b id="erros">0</b></span><span>Seguidos: <b id="seq">0</b></span><button id="zerar" type="button">Zerar</button></div>
+  <div class="cartao">
+    <div id="conta">2 + 3 = ?</div>
+    <div id="msg"></div>
+  </div>
+  <div class="respostas" id="respostas"></div>
+  <div id="estrelas"></div>
+  <button id="prox" hidden>Próxima conta →</button>
+  <div id="fin" hidden style="display:flex;flex-direction:column;gap:12px"></div>
+</div>
+<script>
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+let modo = "contas", op = "+", nivel = 1, certa = 0, acertos = 0, erros = 0, seq = 0, respondeu = false;
+const conta = document.getElementById("conta"), msg = document.getElementById("msg"), resp = document.getElementById("respostas"), prox = document.getElementById("prox");
+
+function gerar() {
+  const o = op === "mix" ? ["+","-","x","/"][rnd(0,3)] : op;
+  let a, b, r;
+  const lim = {1:100, 2:500, 3:1000}[nivel];
+  if (o === "+") { a = rnd(nivel === 1 ? 5 : 20, lim); b = rnd(nivel === 1 ? 5 : 20, lim); r = a + b; }
+  if (o === "-") { a = rnd(nivel === 1 ? 10 : 50, lim); b = rnd(1, a); r = a - b; }
+  if (o === "x") {
+    if (nivel === 1) { a = rnd(2, 10); b = rnd(2, 10); }
+    else if (nivel === 2) { a = rnd(11, 99); b = rnd(2, 9); }
+    else { a = rnd(100, 999); b = rnd(2, 9); if (Math.random() < .4) { a = rnd(11, 99); b = rnd(11, 30); } }
+    r = a * b;
+  }
+  if (o === "/") {
+    if (nivel === 1) { b = rnd(2, 10); r = rnd(1, 10); }
+    else if (nivel === 2) { b = rnd(2, 9); r = rnd(11, 60); }
+    else { b = rnd(3, 12); r = rnd(20, 150); }
+    a = b * r;
+  }
+  const simb = {"+":"+","-":"−","x":"×","/":"÷"}[o];
+  if (modo === "problemas") return { texto: problema(o, a, b, r), r, problema: true };
+  return { texto: `${a} ${simb} ${b} = ?`, r };
+}
+
+const nomes = ["Lara","Lívia","Pedro","Ana","Lucas","Sofia","Miguel","Helena","Theo","Alice"];
+const coisas = [["bolacha","bolachas"],["bala","balas"],["figurinha","figurinhas"],["lápis","lápis"],["maçã","maçãs"],["bolinha de gude","bolinhas de gude"],["adesivo","adesivos"],["morango","morangos"],["pirulito","pirulitos"],["carrinho","carrinhos"]];
+const caixas = [["caixa","caixas"],["pacote","pacotes"],["saquinho","saquinhos"],["pote","potes"]];
+const pick = (arr) => arr[rnd(0, arr.length - 1)];
+const pl = (n, c) => n + " " + (n === 1 ? c[0] : c[1]);
+function problema(o, a, b, r) {
+  let n1 = pick(nomes), n2 = pick(nomes); while (n2 === n1) n2 = pick(nomes);
+  const c = pick(coisas), cx = pick(caixas);
+  if (o === "+") return pick([
+    `${n1} tinha ${pl(a, c)} e ganhou mais ${pl(b, c)} de ${n2}. Com quantas ${c[1]} ${n1} ficou?`,
+    `${n1} tem ${pl(a, c)} e ${n2} tem ${pl(b, c)}. Quantas ${c[1]} as duas crianças têm juntas?`,
+    `De manhã ${n1} comeu ${pl(a, c)} e de tarde comeu mais ${pl(b, c)}. Quantas ${c[1]} ${n1} comeu no dia?`]);
+  if (o === "-") return pick([
+    `${n1} tinha ${pl(a, c)} e deu ${pl(b, c)} para ${n2}. Com quantas ${c[1]} ${n1} ficou?`,
+    `${n1} tinha ${pl(a, c)} e comeu ${b}. Quantas ${c[1]} sobraram?`,
+    `${n1} tem ${pl(a, c)} e ${n2} tem ${pl(b, c)}. Quantas ${c[1]} ${n1} tem a mais que ${n2}?`]);
+  if (o === "x") return pick([
+    `${n1} comprou ${pl(a, cx)} de ${c[1]}. Cada ${cx[0]} tem ${pl(b, c)}. Quantas ${c[1]} ${n1} comprou ao todo?`,
+    `${n1} ganhou ${pl(b, c)} por dia durante ${a} ${a === 1 ? "dia" : "dias"}. Quantas ${c[1]} ganhou no total?`,
+    `Na festa tinha ${a} ${a === 1 ? "mesa" : "mesas"} com ${pl(b, c)} em cada uma. Quantas ${c[1]} tinha na festa?`]);
+  return pick([
+    `${n1} tem ${pl(a, c)} e quer dividir igualmente entre ${b} ${b === 1 ? "amigo" : "amigos"}. Quantas ${c[1]} cada um ganha?`,
+    `${n1} tem ${pl(a, c)} e vai guardar ${b} em cada ${cx[0]}. Quantas ${cx[1]} vai precisar?`,
+    `A professora tem ${pl(a, c)} para dividir igualmente entre ${b} ${b === 1 ? "criança" : "crianças"}. Quantas ${c[1]} cada criança recebe?`]);
+}
+
+function opcoes(r) {
+  const passos = [1, 2, 10];
+  if (r >= 100) passos.push(100, 20);
+  if (r >= 30) passos.push(5);
+  const cand = [];
+  passos.forEach(p => { cand.push(r + p, r - p); });
+  const s = new Set([r]);
+  cand.filter(x => x >= 0).sort(() => Math.random() - .5).forEach(x => { if (s.size < 4) s.add(x); });
+  while (s.size < 4) s.add(r + s.size * 3);
+  return [...s].sort(() => Math.random() - .5);
+}
+
+function nova() {
+  respondeu = false; prox.hidden = true; msg.textContent = ""; msg.className = "";
+  const q = gerar(); certa = q.r; conta.textContent = q.texto; conta.classList.toggle("problema", !!q.problema);
+  resp.innerHTML = "";
+  opcoes(q.r).forEach(v => {
+    const b = document.createElement("button"); b.className = "resp"; b.textContent = v;
+    b.onclick = () => responder(b, v); resp.appendChild(b);
+  });
+}
+
+function responder(btn, v) {
+  if (respondeu) return; respondeu = true;
+  const botoes = [...resp.children];
+  botoes.forEach(b => { b.disabled = true; if (Number(b.textContent) === certa) b.classList.add("certo"); });
+  if (v === certa) {
+    acertos++; seq++; msg.textContent = ["Muito bem!","Isso aí!","Acertou!","Arrasou!"][rnd(0,3)]; msg.className = "certo";
+    if (modo === "contas") conta.textContent = conta.textContent.replace("?", certa);
+  } else {
+    erros++; seq = 0; btn.classList.add("errado");
+    msg.textContent = `Quase! A resposta é ${certa}`; msg.className = "errado";
+    if (modo === "contas") conta.textContent = conta.textContent.replace("?", certa);
+  }
+  document.getElementById("acertos").textContent = acertos;
+  document.getElementById("erros").textContent = erros;
+  document.getElementById("seq").textContent = seq;
+  document.getElementById("estrelas").textContent = "⭐".repeat(Math.min(seq, 10));
+  prox.hidden = false;
+  if (v === certa) setTimeout(() => { if (respondeu) nova(); }, modo === "problemas" ? 2000 : 1200);
+}
+
+prox.onclick = nova;
+document.getElementById("zerar").onclick = () => {
+  acertos = 0; erros = 0; seq = 0;
+  document.getElementById("acertos").textContent = 0;
+  document.getElementById("erros").textContent = 0;
+  document.getElementById("seq").textContent = 0;
+  document.getElementById("estrelas").textContent = "";
+  nova();
+};
+document.querySelectorAll("#modos .modo").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#modos .modo").forEach(x => x.classList.remove("on")); b.classList.add("on"); modo = b.dataset.m; aplicarModo();
+});
+document.querySelectorAll("#ops .op").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#ops .op").forEach(x => x.classList.remove("on")); b.classList.add("on"); op = b.dataset.op; nova();
+});
+document.querySelectorAll("#niveis .nivel").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#niveis .nivel").forEach(x => x.classList.remove("on")); b.classList.add("on"); nivel = Number(b.dataset.n); nova();
+});
+// ===== Educação financeira =====
+const MODULOS = ["🪙 Módulo 1 · Conhecendo o dinheiro", "🛒 Módulo 2 · Fazendo escolhas", "🐷 Módulo 3 · Guardando dinheiro", "🌱 Módulo 4 · Fazendo o dinheiro crescer", "⚠️ Módulo 5 · Cuidado com as dívidas", "🍋 Módulo 6 · Ganhando e empreendendo"];
+const L = (m, titulo, conto, perguntas) => ({ m, titulo, conto, perguntas });
+const Q = (p, o, c, e) => ({ p, o, c, e });
+const LICOES = [
+  // ===== MÓDULO 1 =====
+  L(0, "Para que serve o dinheiro?",
+    "Antigamente não existia dinheiro. Quem tinha galinhas e queria arroz precisava achar alguém que tivesse arroz e quisesse galinhas. Isso se chama TROCA, e era bem difícil! Então as pessoas inventaram o dinheiro: um jeito fácil de trocar qualquer coisa por qualquer coisa.",
+    [Q("Antes de existir dinheiro, como as pessoas conseguiam as coisas?", ["Trocando uma coisa por outra", "Pegando nas lojas de graça", "Pedindo para o banco"], 0, "Era a troca: uma galinha por um saco de arroz, por exemplo."),
+     Q("Por que o dinheiro facilitou a vida?", ["Porque é colorido", "Porque serve para trocar por qualquer coisa", "Porque não acaba nunca"], 1, "Com dinheiro você não precisa achar alguém que queira suas galinhas."),
+     Q("O dinheiro é…", ["Um brinquedo", "Um combinado que todo mundo aceita para trocar coisas", "Um papel sem valor"], 1, "Todo mundo aceita o dinheiro porque combinou que ele vale.")]),
+  L(0, "Moedas e notas",
+    "A Lara abriu o cofrinho e achou: uma nota de 10 reais, uma nota de 5 reais, duas moedas de 1 real e uma moeda de 50 centavos. Cada real tem 100 centavos. Duas moedas de 50 centavos valem 1 real. Para saber quanto ela tem, é só somar com calma.",
+    [Q("Quanto a Lara tem? (10 + 5 + 1 + 1 + 0,50)", ["R$ 17,00", "R$ 17,50", "R$ 16,50", "R$ 18,00"], 1, "10 + 5 = 15, mais 2 reais = 17, mais 50 centavos = R$ 17,50."),
+     Q("Quantas moedas de 25 centavos fazem 1 real?", ["2", "4", "5", "10"], 1, "25 + 25 + 25 + 25 = 100 centavos = 1 real."),
+     Q("O que vale mais?", ["Uma nota de 20 reais", "Três notas de 5 reais", "Dez moedas de 1 real"], 0, "20 é mais que 15 (três notas de 5) e mais que 10.")]),
+  L(0, "O troco",
+    "Na cantina, a Lívia comprou um suco de R$ 4,00 e pagou com uma nota de R$ 10,00. A moça devolveu R$ 6,00. Isso é o TROCO: a diferença entre o que você pagou e o que custou. Sempre confira o troco! A conta é de menos: 10 − 4 = 6.",
+    [Q("Um lanche custa R$ 7,00. Você paga com R$ 10,00. Qual é o troco?", ["R$ 2,00", "R$ 3,00", "R$ 4,00", "R$ 17,00"], 1, "10 − 7 = 3 reais de troco."),
+     Q("Um caderno custa R$ 12,50. Você paga com R$ 20,00. Qual é o troco?", ["R$ 8,50", "R$ 7,50", "R$ 7,00", "R$ 32,50"], 1, "20,00 − 12,50 = R$ 7,50."),
+     Q("Por que é importante conferir o troco?", ["Para não perder dinheiro por engano", "Porque é divertido", "Não é importante"], 0, "Todo mundo pode errar. Conferindo, você não perde nada.")]),
+  L(0, "De onde vem o dinheiro?",
+    "O dinheiro da família vem do TRABALHO. A mamãe pode ser professora, o papai pode ser corretor, o tio pode ser motorista. Cada pessoa faz um trabalho e recebe um SALÁRIO por ele. Esse dinheiro custou horas de esforço, por isso a gente cuida bem dele e não desperdiça.",
+    [Q("De onde vem o dinheiro que a família usa?", ["Da maquininha do mercado", "Do trabalho das pessoas", "Cai do céu"], 1, "O dinheiro vem do trabalho."),
+     Q("Como se chama o dinheiro que a pessoa recebe pelo trabalho?", ["Troco", "Salário", "Desconto"], 1, "Salário é o pagamento pelo trabalho."),
+     Q("Se a mamãe ganha R$ 50 por dia de trabalho, quanto ganha em 5 dias?", ["R$ 55", "R$ 200", "R$ 250", "R$ 500"], 2, "50 × 5 = 250 reais.")]),
+  L(0, "O dinheiro invisível: cartão e Pix",
+    "Hoje muita gente paga com cartão ou Pix e nem vê o dinheiro. Mas ele existe! Quando o papai passa o cartão de débito ou faz um Pix, o dinheiro sai da conta dele na mesma hora. O dinheiro não aparece na mão, mas acaba do mesmo jeito. Por isso, gastar no cartão é gastar dinheiro de verdade.",
+    [Q("Quando pagamos com Pix, o dinheiro…", ["É de graça", "Sai da conta na hora", "Volta no dia seguinte"], 1, "O Pix tira o dinheiro da conta na hora."),
+     Q("Gastar no cartão é gastar dinheiro de verdade?", ["Sim", "Não, é só um cartão", "Só às vezes"], 0, "O cartão é só outro jeito de usar o dinheiro."),
+     Q("O papai tinha R$ 100 na conta e fez um Pix de R$ 35. Quanto sobrou?", ["R$ 135", "R$ 75", "R$ 65", "R$ 35"], 2, "100 − 35 = 65 reais.")]),
+  // ===== MÓDULO 2 =====
+  L(1, "Preciso ou quero?",
+    "O Pedro foi ao mercado com o pai. Eles precisavam de arroz, leite e pasta de dente. O Pedro viu um brinquedo e quis muito. O pai explicou: arroz, leite e pasta de dente são NECESSIDADES, coisas que a gente precisa para viver bem. O brinquedo é um DESEJO: legal, mas dá para esperar. Primeiro as necessidades, depois os desejos.",
+    [Q("Qual destas coisas é uma NECESSIDADE?", ["Videogame novo", "Comida", "Figurinhas", "Sorvete"], 1, "Comida a gente precisa para viver."),
+     Q("Qual destas coisas é um DESEJO?", ["Remédio quando está doente", "Material da escola", "Uma boneca nova", "Água"], 2, "A boneca é legal, mas dá para esperar."),
+     Q("Se o dinheiro só dá para uma coisa, o que comprar primeiro?", ["O desejo", "A necessidade", "Os dois fiado"], 1, "Primeiro o que precisamos, depois o que queremos.")]),
+  L(1, "Escolher é deixar de ter outra coisa",
+    "A Helena tinha R$ 20,00. Ela podia comprar um livro ou ir ao cinema, mas não as duas coisas. Escolheu o livro. Então o cinema ficou para depois. Toda vez que escolhemos uma coisa, abrimos mão de outra. Por isso vale pensar: o que eu quero MAIS?",
+    [Q("A Helena tinha R$ 20. O livro custa R$ 20 e o cinema também. O que acontece?", ["Ela compra os dois", "Ela escolhe um e abre mão do outro", "O dinheiro dobra"], 1, "Com 20 reais dá para só um dos dois."),
+     Q("Antes de gastar, uma boa pergunta é…", ["O que eu quero MAIS?", "Qual é o mais caro?", "O que meu amigo tem?"], 0, "Pensar no que é mais importante ajuda a escolher melhor."),
+     Q("Você tem R$ 15. Um sorvete custa R$ 6 e um gibi R$ 10. Dá para os dois?", ["Sim, sobra dinheiro", "Não, falta R$ 1", "Sim, sobra R$ 1"], 1, "6 + 10 = 16. Faltaria 1 real.")]),
+  L(1, "Comparando preços",
+    "O caderno custava R$ 18,00 na papelaria A e R$ 14,00 na papelaria B. A Sofia comprou na B e economizou R$ 4,00! Comparar preços antes de comprar faz o dinheiro render. O pacote grande às vezes sai mais barato por unidade, mas só vale se você for usar tudo.",
+    [Q("Quanto a Sofia economizou? (18 − 14)", ["R$ 2", "R$ 4", "R$ 14", "R$ 32"], 1, "18 − 14 = 4 reais economizados."),
+     Q("2 lápis por R$ 6 ou 4 lápis por R$ 10. Qual sai mais barato por lápis?", ["O de 2 (R$ 3 cada)", "O de 4 (R$ 2,50 cada)", "São iguais"], 1, "10 ÷ 4 = 2,50 por lápis, mais barato que 3."),
+     Q("Quando o pacote grande NÃO vale a pena?", ["Quando você vai usar tudo", "Quando vai sobrar e estragar", "Nunca"], 1, "Se vai estragar, o barato sai caro.")]),
+  L(1, "A propaganda quer que você compre",
+    "Na TV apareceu um tênis que acende luzes, com crianças pulando felizes. O Lucas quis na hora! A mãe explicou: a propaganda é feita para dar vontade de comprar. Ela mostra só o lado bom. Antes de pedir, pense: eu preciso disso? Vou usar mesmo? Ou só fiquei com vontade porque vi a propaganda?",
+    [Q("Para que serve a propaganda?", ["Para dar vontade de comprar", "Para ensinar matemática", "Para dar presentes"], 0, "A propaganda quer vender."),
+     Q("A propaganda mostra…", ["Os defeitos do produto", "Só o lado bom do produto", "O preço mais barato da cidade"], 1, "Ela mostra o lado bom, nunca os defeitos."),
+     Q("Viu uma propaganda e ficou com vontade. O que fazer?", ["Comprar na hora", "Pensar se precisa e se vai usar", "Chorar até ganhar"], 1, "Pensar antes evita compras que depois não usamos.")]),
+  L(1, "A regra do dia seguinte",
+    "O Miguel viu um carrinho na loja e quis levar na hora. A avó ensinou a REGRA DO DIA SEGUINTE: quando der muita vontade de comprar uma coisa, espere um dia. Se amanhã você ainda quiser, pense de novo. Muitas vezes a vontade passa! Isso evita a COMPRA POR IMPULSO, aquela feita sem pensar.",
+    [Q("O que é compra por impulso?", ["Compra planejada", "Compra feita sem pensar, só pela vontade", "Compra de comida"], 1, "É comprar sem pensar, só porque deu vontade."),
+     Q("O que diz a regra do dia seguinte?", ["Comprar tudo amanhã", "Esperar um dia antes de comprar o que deu vontade", "Nunca comprar nada"], 1, "Esperar um dia ajuda a ver se a vontade é de verdade."),
+     Q("O Miguel esperou e no dia seguinte não queria mais o carrinho. O que ele ganhou?", ["Nada", "Guardou o dinheiro para outra coisa", "Perdeu o carrinho para sempre"], 1, "O dinheiro continua com ele para algo que ele queira de verdade.")]),
+  // ===== MÓDULO 3 =====
+  L(2, "O cofrinho e a meta",
+    "A Sofia quer uma bicicleta de R$ 300,00. Ela ganha R$ 30,00 de mesada por mês. Guardando tudo, em quantos meses junta? 300 ÷ 30 = 10 meses. Isso é uma META: um objetivo com valor e prazo. Juntar um pouquinho todo mês, sem pegar de volta, é o segredo para conseguir coisas grandes.",
+    [Q("Guardando R$ 30 por mês, quanto a Sofia terá em 4 meses?", ["R$ 34", "R$ 90", "R$ 120", "R$ 150"], 2, "30 × 4 = 120 reais."),
+     Q("Um patinete custa R$ 200. Guardando R$ 20 por mês, quantos meses leva?", ["5 meses", "10 meses", "20 meses", "2 meses"], 1, "200 ÷ 20 = 10 meses."),
+     Q("O que é uma meta?", ["Gastar tudo logo", "Um objetivo com valor e prazo", "Um tipo de moeda"], 1, "Saber quanto e até quando ajuda a chegar lá.")]),
+  L(2, "Os três potes",
+    "O Theo divide a mesada em três potes: GASTAR, GUARDAR e AJUDAR. Ele ganha R$ 40,00. Coloca R$ 20,00 no pote de gastar, R$ 15,00 no de guardar e R$ 5,00 no de ajudar, para doar a quem precisa. Assim ele aproveita hoje, pensa no futuro e ainda ajuda os outros.",
+    [Q("Quanto o Theo colocou nos três potes? (20 + 15 + 5)", ["R$ 35", "R$ 40", "R$ 45", "R$ 50"], 1, "20 + 15 + 5 = 40, toda a mesada."),
+     Q("Mesada de R$ 60 e metade para gastar. Quanto vai para gastar?", ["R$ 20", "R$ 30", "R$ 40", "R$ 60"], 1, "Metade de 60 é 30."),
+     Q("Para que serve o pote GUARDAR?", ["Para gastar hoje", "Para o futuro e para as metas", "Para jogar fora"], 1, "O pote guardar é o dinheiro do futuro.")]),
+  L(2, "O orçamento da semana",
+    "A Alice ganha R$ 25,00 por semana. Ela anotou os gastos: R$ 10,00 de lanche, R$ 6,00 de figurinhas e R$ 4,00 de sorvete. Isso é um ORÇAMENTO: anotar quanto entra e quanto sai. 10 + 6 + 4 = 20. Sobraram R$ 5,00 para guardar! Quem anota sabe para onde o dinheiro vai.",
+    [Q("Quanto a Alice gastou na semana? (10 + 6 + 4)", ["R$ 16", "R$ 20", "R$ 24", "R$ 25"], 1, "10 + 6 + 4 = 20 reais."),
+     Q("Ela ganhou R$ 25 e gastou R$ 20. Quanto sobrou?", ["R$ 5", "R$ 45", "R$ 10", "Nada"], 0, "25 − 20 = 5 reais."),
+     Q("Para que serve o orçamento?", ["Para saber quanto entra e quanto sai", "Para gastar mais", "Para esconder dinheiro"], 0, "Anotando, você controla o seu dinheiro.")]),
+  L(2, "O dinheiro para imprevistos",
+    "A bicicleta do Lucas furou o pneu. O conserto custava R$ 15,00. Ainda bem que ele tinha um dinheirinho guardado só para emergências! Isso se chama RESERVA DE EMERGÊNCIA: um dinheiro guardado para quando acontece algo que a gente não esperava. Adultos também têm, para quando o carro quebra ou alguém fica doente.",
+    [Q("O que é reserva de emergência?", ["Dinheiro para festas", "Dinheiro guardado para imprevistos", "Dinheiro emprestado"], 1, "É o dinheiro para o que a gente não espera."),
+     Q("Qual destas é uma emergência?", ["Comprar um jogo novo", "O pneu da bicicleta furou", "Ir ao cinema"], 1, "Ninguém planeja um pneu furado."),
+     Q("Se o Lucas tinha R$ 40 de reserva e gastou R$ 15 no conserto, quanto sobrou?", ["R$ 25", "R$ 55", "R$ 35", "R$ 15"], 0, "40 − 15 = 25 reais.")]),
+  L(2, "Metas pequenas e metas grandes",
+    "A Lara tem duas metas. Uma PEQUENA: um livro de R$ 30,00, para daqui a 2 meses. Uma GRANDE: um videogame de R$ 600,00, para daqui a 2 anos. Metas pequenas chegam rápido e dão ânimo. Metas grandes precisam de paciência. Dá para guardar para as duas ao mesmo tempo, um pouco para cada uma!",
+    [Q("Uma meta que leva anos para juntar é…", ["Pequena", "Grande", "Impossível"], 1, "Metas grandes levam mais tempo."),
+     Q("O livro custa R$ 30 e a Lara quer em 2 meses. Quanto guardar por mês?", ["R$ 10", "R$ 15", "R$ 30", "R$ 60"], 1, "30 ÷ 2 = 15 reais por mês."),
+     Q("O videogame custa R$ 600. Guardando R$ 25 por mês, quantos meses leva?", ["12 meses", "20 meses", "24 meses", "60 meses"], 2, "600 ÷ 25 = 24 meses, ou seja, 2 anos.")]),
+  // ===== MÓDULO 4 =====
+  L(3, "Porcentagem: um pedaço de 100",
+    "PORCENTAGEM quer dizer \"um pedaço de cada 100\". 10% de 100 é 10. 50% é a metade. 25% é um quarto. Nas lojas aparece muito: \"20% de desconto\". Se um brinquedo custa R$ 50,00 com 20% de desconto, o desconto é R$ 10,00 e você paga R$ 40,00.",
+    [Q("Quanto é 50% de R$ 80?", ["R$ 8", "R$ 40", "R$ 50", "R$ 30"], 1, "50% é a metade: 80 ÷ 2 = 40."),
+     Q("Quanto é 10% de R$ 70?", ["R$ 7", "R$ 10", "R$ 17", "R$ 0,70"], 0, "10% é dividir por 10: 70 ÷ 10 = 7."),
+     Q("Um jogo de R$ 100 está com 30% de desconto. Quanto você paga?", ["R$ 30", "R$ 70", "R$ 130", "R$ 97"], 1, "30% de 100 é 30. 100 − 30 = 70 reais.")]),
+  L(3, "Juros: o dinheiro que cresce",
+    "O Miguel guardou R$ 100,00 numa conta que paga 1% por mês. Isso se chama JUROS: o banco paga um pouquinho para usar o seu dinheiro guardado. 1% de 100 é 1 real. Depois de 1 mês, ele tem R$ 101,00. Quanto mais tempo o dinheiro fica guardado, mais ele cresce.",
+    [Q("Quanto é 1% de R$ 100?", ["R$ 1", "R$ 10", "R$ 100", "R$ 0,10"], 0, "1% de 100 reais é 1 real."),
+     Q("R$ 200 guardados rendendo 1% ao mês. Quanto rende no primeiro mês?", ["R$ 1", "R$ 2", "R$ 20", "R$ 201"], 1, "1% de 200 é 2 reais."),
+     Q("O que são juros quando você guarda dinheiro?", ["Uma multa", "Um dinheiro extra que você ganha por guardar", "Um tipo de nota"], 1, "Guardando, os juros trabalham a seu favor.")]),
+  L(3, "A bola de neve dos juros",
+    "Os juros são como uma bola de neve rolando: começa pequena e vai crescendo. No 1º mês, R$ 100 com 10% vira R$ 110. No 2º mês, os 10% são calculados sobre R$ 110, então vira R$ 121. Os juros passam a render juros também! Isso se chama JUROS COMPOSTOS. Por isso começar a guardar cedo faz muita diferença.",
+    [Q("R$ 100 com 10% vira quanto depois de 1 mês?", ["R$ 101", "R$ 110", "R$ 120", "R$ 200"], 1, "10% de 100 é 10. 100 + 10 = 110."),
+     Q("No 2º mês, os 10% são calculados sobre…", ["R$ 100", "R$ 110", "R$ 10"], 1, "Sobre o valor novo, R$ 110. Por isso vira 121."),
+     Q("Por que começar a guardar cedo é bom?", ["Porque os juros têm mais tempo para crescer", "Porque o dinheiro fica velho", "Não faz diferença"], 0, "Mais tempo, maior a bola de neve.")]),
+  L(3, "Quando os preços sobem",
+    "A vovó conta que, quando ela era criança, um pão custava centavos. Hoje custa bem mais. Quando os preços sobem com o tempo, chamamos de INFLAÇÃO. Por isso, dinheiro parado embaixo do colchão vai comprando cada vez menos. Guardar num lugar que rende juros ajuda o dinheiro a não perder valor.",
+    [Q("O que é inflação?", ["Quando os preços sobem com o tempo", "Quando os preços caem", "Um tipo de balão"], 0, "Inflação é a subida dos preços."),
+     Q("Um sorvete custava R$ 5 e agora custa R$ 6. Quanto subiu?", ["R$ 1", "R$ 11", "R$ 6", "R$ 5"], 0, "6 − 5 = 1 real a mais."),
+     Q("Dinheiro guardado embaixo do colchão…", ["Cresce sozinho", "Compra cada vez menos com o tempo", "Vira ouro"], 1, "Com os preços subindo, o dinheiro parado vale menos.")]),
+  L(3, "Investir com paciência",
+    "INVESTIR é colocar o dinheiro em algum lugar para ele crescer com o tempo. Existem investimentos mais seguros, que crescem devagar, e outros com mais RISCO, que podem crescer mais, mas também podem perder. Quem investe bem tem paciência, não coloca tudo num lugar só e não acredita em promessa de dinheiro fácil.",
+    [Q("O que é investir?", ["Gastar tudo rápido", "Colocar o dinheiro para crescer com o tempo", "Pedir emprestado"], 1, "Investir é fazer o dinheiro trabalhar."),
+     Q("Alguém promete dobrar seu dinheiro em uma semana. O que fazer?", ["Aceitar na hora", "Desconfiar: dinheiro fácil assim não existe", "Contar para todo mundo"], 1, "Promessa de dinheiro fácil quase sempre é golpe."),
+     Q("Por que não colocar todo o dinheiro num lugar só?", ["Para não perder tudo se der errado", "Porque é proibido", "Não tem motivo"], 0, "Dividir diminui o risco.")]),
+  // ===== MÓDULO 5 =====
+  L(4, "Pegar emprestado",
+    "A Alice pegou R$ 10,00 emprestado com o irmão para comprar um lanche. Ele combinou: \"Você me devolve R$ 12,00 semana que vem\". Ela pagou 2 reais a mais! Quando pegamos dinheiro emprestado, quase sempre devolvemos mais do que pegamos. É melhor juntar antes e comprar depois.",
+    [Q("Quanto a Alice pagou a mais? (12 − 10)", ["R$ 1", "R$ 2", "R$ 10", "R$ 22"], 1, "Ela devolveu 2 reais a mais."),
+     Q("Qual é a escolha mais esperta?", ["Comprar fiado sempre", "Juntar dinheiro e depois comprar", "Pegar emprestado todo dia"], 1, "Juntando antes, você não paga nada a mais."),
+     Q("Quando você guarda, os juros são seus amigos. E quando você deve?", ["Também são amigos", "Viram inimigos: você paga a mais", "Não existem"], 1, "Dever faz você pagar mais caro.")]),
+  L(4, "O cartão de crédito",
+    "No cartão de CRÉDITO, você compra hoje e paga no mês seguinte, quando chega a fatura. Parece mágica, mas não é: a conta chega! Se não pagar a fatura inteira, o banco cobra juros muito altos. Por isso, o cartão de crédito só é bom para quem já tem o dinheiro para pagar a fatura.",
+    [Q("No cartão de crédito, quando se paga a compra?", ["Nunca", "No mês seguinte, na fatura", "Na hora, em dinheiro"], 1, "A fatura chega depois, e tem que pagar."),
+     Q("O que acontece se não pagar a fatura inteira?", ["Nada", "O banco cobra juros altos", "O banco perdoa"], 1, "Os juros do cartão são dos mais altos que existem."),
+     Q("O cartão de crédito é bom para quem…", ["Não tem dinheiro", "Já tem o dinheiro para pagar a fatura", "Quer comprar tudo"], 1, "Só use se o dinheiro já existe.")]),
+  L(4, "Parcelado: em vezes",
+    "A Sofia viu uma bicicleta por R$ 300,00 à vista ou em 10 vezes de R$ 36,00. Parece pouco por mês, mas 36 × 10 = R$ 360,00. Ela pagaria R$ 60,00 a mais! Antes de parcelar, multiplique a parcela pelo número de vezes e compare com o preço à vista.",
+    [Q("10 vezes de R$ 36 dá quanto no total?", ["R$ 36", "R$ 300", "R$ 360", "R$ 46"], 2, "36 × 10 = 360 reais."),
+     Q("À vista R$ 300, parcelado R$ 360. Quanto paga a mais parcelando?", ["R$ 6", "R$ 36", "R$ 60", "Nada"], 2, "360 − 300 = 60 reais a mais."),
+     Q("Antes de parcelar, o que fazer?", ["Multiplicar parcela × vezes e comparar com à vista", "Escolher a parcela menor", "Parcelar sempre"], 0, "Assim você vê quanto paga de verdade.")]),
+  L(4, "Cuidado com golpes",
+    "Chegou uma mensagem no celular: \"Você ganhou um prêmio! Mande sua senha para receber\". É GOLPE! Ninguém de verdade pede senha por mensagem. Regras de ouro: nunca conte sua senha, desconfie de prêmio que você não pediu e, na dúvida, pergunte para um adulto de confiança antes de clicar em qualquer coisa.",
+    [Q("Uma mensagem pede sua senha para dar um prêmio. O que é?", ["Um presente", "Um golpe", "O banco ajudando"], 1, "Ninguém de verdade pede senha por mensagem."),
+     Q("Para quem você pode contar sua senha?", ["Para qualquer amigo", "Para ninguém (só os pais sabem)", "Para quem mandar mensagem"], 1, "Senha é segredo."),
+     Q("Na dúvida sobre uma mensagem estranha, o que fazer?", ["Clicar para ver", "Perguntar a um adulto de confiança", "Responder com os dados"], 1, "Perguntar antes é sempre o mais seguro.")]),
+  L(4, "Quando a dívida vira bola de neve",
+    "Lembra da bola de neve dos juros? Ela também acontece com as DÍVIDAS. Quem deve e não paga, deve mais no mês seguinte, porque entram juros. E no outro mês mais ainda. Por isso é importante gastar menos do que ganha. Assim sempre sobra dinheiro, e não falta.",
+    [Q("Uma dívida que não é paga…", ["Some sozinha", "Cresce com os juros", "Fica igual para sempre"], 1, "Os juros fazem a dívida crescer."),
+     Q("Qual é a regra para não ter dívidas?", ["Gastar mais do que ganha", "Gastar menos do que ganha", "Gastar tudo que ganha"], 1, "Gastando menos, sempre sobra."),
+     Q("Ganha R$ 50 e gasta R$ 60. O que acontece?", ["Sobra R$ 10", "Falta R$ 10 e vira dívida", "Fica tudo certo"], 1, "Gastou 10 a mais do que tinha.")]),
+  // ===== MÓDULO 6 =====
+  L(5, "Ganhar o próprio dinheiro",
+    "A Lívia queria juntar mais dinheiro. Combinou com os pais tarefas extras, além das obrigações de casa: lavar o carro por R$ 10,00 e ajudar a organizar a garagem por R$ 15,00. Ela descobriu que o dinheiro vem do esforço e que dá orgulho ganhar o próprio dinheiro.",
+    [Q("Quanto a Lívia ganhou com as duas tarefas? (10 + 15)", ["R$ 20", "R$ 25", "R$ 30", "R$ 15"], 1, "10 + 15 = 25 reais."),
+     Q("Se lavar o carro 4 vezes no mês a R$ 10, quanto ganha?", ["R$ 14", "R$ 40", "R$ 400", "R$ 10"], 1, "10 × 4 = 40 reais."),
+     Q("De onde veio o dinheiro da Lívia?", ["Do esforço e do trabalho dela", "De sorte", "Do cofrinho do irmão"], 0, "Trabalho gera renda.")]),
+  L(5, "Receita, custo e lucro",
+    "A Lara e a Lívia montaram uma barraca de limonada. Gastaram R$ 20,00 com limão, açúcar e copos. Isso é o CUSTO. Venderam 15 copos a R$ 3,00: 15 × 3 = R$ 45,00. Isso é a RECEITA. O LUCRO é o que sobra: 45 − 20 = R$ 25,00.",
+    [Q("Venderam 10 copos a R$ 3. Qual é a receita?", ["R$ 13", "R$ 30", "R$ 33", "R$ 300"], 1, "10 × 3 = 30 reais."),
+     Q("Receita de R$ 30 e custo de R$ 20. Qual é o lucro?", ["R$ 10", "R$ 20", "R$ 50", "R$ 30"], 0, "30 − 20 = 10 reais de lucro."),
+     Q("O que é lucro?", ["Tudo que entrou", "O que sobra depois de pagar os custos", "O preço do limão"], 1, "Lucro = receita − custos.")]),
+  L(5, "Qual preço cobrar?",
+    "Cada copo de limonada custa R$ 1,00 para fazer. Se a Lara vender por R$ 1,00, não ganha nada. Se vender por R$ 10,00, ninguém compra! O preço bom cobre o custo, dá um lucro e é justo para quem compra. Ela escolheu R$ 3,00: ganha R$ 2,00 por copo e todo mundo achou justo.",
+    [Q("O copo custa R$ 1 para fazer e é vendido por R$ 3. Qual o lucro por copo?", ["R$ 1", "R$ 2", "R$ 3", "R$ 4"], 1, "3 − 1 = 2 reais por copo."),
+     Q("Vendendo pelo mesmo preço do custo, o lucro é…", ["Grande", "Zero", "Negativo sempre"], 1, "Se vende pelo custo, não sobra nada."),
+     Q("Com lucro de R$ 2 por copo, quanto ganha vendendo 12 copos?", ["R$ 14", "R$ 24", "R$ 36", "R$ 12"], 1, "2 × 12 = 24 reais de lucro.")]),
+  L(5, "Ajudar quem precisa",
+    "Com o lucro da limonada, as meninas separaram uma parte para doar a um abrigo de animais. Usar dinheiro para ajudar os outros também é uma escolha importante. Lembra do pote AJUDAR? Doar não precisa ser muito: um pouquinho, de coração, já faz diferença.",
+    [Q("Lucro de R$ 25 e doaram R$ 5. Quanto ficou para elas?", ["R$ 20", "R$ 30", "R$ 5", "R$ 25"], 0, "25 − 5 = 20 reais."),
+     Q("Que porcentagem de R$ 25 são R$ 5?", ["5%", "20%", "25%", "50%"], 1, "5 é um quinto de 25, ou seja, 20%."),
+     Q("Doar precisa ser muito dinheiro?", ["Sim, só vale se for muito", "Não, um pouquinho já ajuda", "Só adulto pode doar"], 1, "Todo gesto conta.")]),
+  L(5, "Meu plano financeiro",
+    "Chegou a hora de juntar tudo! Um bom PLANO FINANCEIRO tem: saber quanto ganha, dividir nos potes (gastar, guardar, ajudar), ter metas, guardar uma reserva para imprevistos, pensar antes de comprar e fugir das dívidas. Quem aprende isso pequeno vira um adulto tranquilo com o dinheiro. Parabéns por chegar até aqui!",
+    [Q("Qual NÃO faz parte de um bom plano financeiro?", ["Ter metas", "Guardar para imprevistos", "Gastar mais do que ganha"], 2, "Gastar mais do que ganha gera dívida."),
+     Q("Mesada de R$ 50: 50% gastar, 30% guardar, 20% ajudar. Quanto vai para guardar?", ["R$ 10", "R$ 15", "R$ 25", "R$ 30"], 1, "30% de 50 = 15 reais."),
+     Q("Qual é o segredo para conseguir coisas grandes?", ["Guardar um pouco todo mês com paciência", "Pedir emprestado", "Ganhar na loteria"], 0, "Constância e paciência vencem!")]),
+];
+
+LICOES.forEach((l,k)=>{ l.titulo = (k+1) + ". " + l.titulo; });
+
+let progresso = 0;
+try { progresso = Number(localStorage.getItem("fin_progresso") || 0); } catch (e) {}
+const salvarProg = () => { try { localStorage.setItem("fin_progresso", String(progresso)); } catch (e) {} };
+
+const fin = document.getElementById("fin");
+function finLista() {
+  const feitas = Math.min(progresso, LICOES.length);
+  let h = `<div class="fin-topo"><div class="fin-barra"><div style="width:${feitas / LICOES.length * 100}%"></div></div><div class="fin-cont">${feitas} de ${LICOES.length} lições concluídas</div></div><div class="fin-lista">`;
+  LICOES.forEach((l, k) => {
+    if (k === 0 || LICOES[k-1].m !== l.m) h += `<div class="fin-mod">${MODULOS[l.m]}</div>`;
+    const est = k < progresso ? "feita" : (k === progresso ? "atual" : "trava");
+    const icone = est === "feita" ? "✅" : (est === "atual" ? "👉" : "🔒");
+    h += `<button class="fin-item ${est}" data-k="${k}" ${est === "trava" ? "disabled" : ""}><span>${icone}</span>${l.titulo}</button>`;
+  });
+  h += `</div><button class="fin-zerar" id="finZerar">Recomeçar as lições</button>`;
+  fin.innerHTML = h;
+  fin.querySelectorAll(".fin-item:not([disabled])").forEach(b => b.onclick = () => finConto(Number(b.dataset.k)));
+  document.getElementById("finZerar").onclick = () => { progresso = 0; salvarProg(); finLista(); };
+}
+function finConto(k) {
+  const l = LICOES[k];
+  fin.innerHTML = `<div class="cartao fin-conto"><h2>${l.titulo}</h2><p>${l.conto}</p></div>
+    <button class="fin-acao" id="finPraticar">Vamos praticar →</button><button class="fin-voltar" id="finVoltar">← Voltar às lições</button>`;
+  document.getElementById("finPraticar").onclick = () => finPergunta(k, 0, 0);
+  document.getElementById("finVoltar").onclick = finLista;
+}
+function finPergunta(k, q, acertou) {
+  const l = LICOES[k], pq = l.perguntas[q];
+  fin.innerHTML = `<div class="cartao"><div class="fin-num">${l.titulo} · pergunta ${q + 1} de ${l.perguntas.length}</div><div class="fin-p">${pq.p}</div><div id="finMsg"></div></div>
+    <div class="fin-ops" id="finOps"></div><button class="fin-acao" id="finProx" hidden></button>`;
+  const ops = document.getElementById("finOps");
+  pq.o.forEach((t, i) => {
+    const b = document.createElement("button"); b.className = "resp fin-op"; b.textContent = t;
+    b.onclick = () => {
+      [...ops.children].forEach((x, j) => { x.disabled = true; if (j === pq.c) x.classList.add("certo"); });
+      const ok = i === pq.c; if (!ok) b.classList.add("errado");
+      const m = document.getElementById("finMsg");
+      m.className = ok ? "certo" : "errado"; m.textContent = ok ? pq.e : "Quase! " + pq.e;
+      const novoAcerto = acertou + (ok ? 1 : 0);
+      const prox = document.getElementById("finProx"); prox.hidden = false;
+      if (q + 1 < l.perguntas.length) { prox.textContent = "Próxima pergunta →"; prox.onclick = () => finPergunta(k, q + 1, novoAcerto); }
+      else { prox.textContent = "Ver resultado →"; prox.onclick = () => finFim(k, novoAcerto); }
+    };
+    ops.appendChild(b);
+  });
+}
+function finFim(k, acertos) {
+  const total = LICOES[k].perguntas.length, passou = acertos >= total - 1;
+  if (passou && k === progresso) { progresso = k + 1; salvarProg(); }
+  fin.innerHTML = `<div class="cartao fin-conto"><div style="font-size:56px">${passou ? "🏆" : "💪"}</div>
+    <h2>${acertos} de ${total} acertos</h2><p>${passou ? (k + 1 < LICOES.length ? "Parabéns! A próxima lição foi liberada." : "Parabéns! Você completou as 30 lições e já sabe cuidar do seu dinheiro! 🎓") : "Faltou pouquinho! Leia a historinha de novo e tente outra vez."}</p></div>
+    <button class="fin-acao" id="finOk">${passou ? "Voltar às lições" : "Tentar de novo"}</button>`;
+  document.getElementById("finOk").onclick = passou ? finLista : () => finConto(k);
+}
+
+const blocosContas = ["ops","niveis"].map(id=>document.getElementById(id)).concat([document.querySelector(".placar"), document.querySelector(".cartao"), document.getElementById("respostas"), document.getElementById("estrelas")]);
+function aplicarModo() {
+  const din = modo === "dinheiro";
+  blocosContas.forEach(e => e.hidden = din);
+  if (din) { prox.hidden = true; fin.hidden = false; finLista(); } else { fin.hidden = true; nova(); }
+}
+nova();
+</script>
+</body>
+</html>
