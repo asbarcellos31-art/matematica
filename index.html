@@ -98,6 +98,13 @@ const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
 let modo = "contas", op = "+", nivel = 1, certa = 0, acertos = 0, erros = 0, seq = 0, respondeu = false;
 const conta = document.getElementById("conta"), msg = document.getElementById("msg"), resp = document.getElementById("respostas"), prox = document.getElementById("prox");
 
+// Salva onde ela parou (modo, placar e a lição/pergunta do Dinheiro)
+let EST = {};
+try { EST = JSON.parse(localStorage.getItem("treino_estado") || "{}") || {}; } catch (e) {}
+const salvarEst = () => { try { localStorage.setItem("treino_estado", JSON.stringify(EST)); } catch (e) {} };
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+const salvarContas = () => { EST.modo = modo; EST.op = op; EST.nivel = nivel; EST.placar = [acertos, erros, seq]; salvarEst(); };
+
 function gerar() {
   const o = op === "mix" ? ["+","-","x","/"][rnd(0,3)] : op;
   let a, b, r;
@@ -185,6 +192,7 @@ function responder(btn, v) {
   document.getElementById("erros").textContent = erros;
   document.getElementById("seq").textContent = seq;
   document.getElementById("estrelas").textContent = "⭐".repeat(Math.min(seq, 10));
+  salvarContas();
   prox.hidden = false;
   if (v === certa) setTimeout(() => { if (respondeu) nova(); }, modo === "problemas" ? 2000 : 1200);
 }
@@ -196,16 +204,17 @@ document.getElementById("zerar").onclick = () => {
   document.getElementById("erros").textContent = 0;
   document.getElementById("seq").textContent = 0;
   document.getElementById("estrelas").textContent = "";
+  salvarContas();
   nova();
 };
 document.querySelectorAll("#modos .modo").forEach(b => b.onclick = () => {
-  document.querySelectorAll("#modos .modo").forEach(x => x.classList.remove("on")); b.classList.add("on"); modo = b.dataset.m; aplicarModo();
+  document.querySelectorAll("#modos .modo").forEach(x => x.classList.remove("on")); b.classList.add("on"); modo = b.dataset.m; salvarContas(); aplicarModo();
 });
 document.querySelectorAll("#ops .op").forEach(b => b.onclick = () => {
-  document.querySelectorAll("#ops .op").forEach(x => x.classList.remove("on")); b.classList.add("on"); op = b.dataset.op; nova();
+  document.querySelectorAll("#ops .op").forEach(x => x.classList.remove("on")); b.classList.add("on"); op = b.dataset.op; salvarContas(); nova();
 });
 document.querySelectorAll("#niveis .nivel").forEach(b => b.onclick = () => {
-  document.querySelectorAll("#niveis .nivel").forEach(x => x.classList.remove("on")); b.classList.add("on"); nivel = Number(b.dataset.n); nova();
+  document.querySelectorAll("#niveis .nivel").forEach(x => x.classList.remove("on")); b.classList.add("on"); nivel = Number(b.dataset.n); salvarContas(); nova();
 });
 // ===== Educação financeira =====
 const MODULOS = ["🪙 Módulo 1 · Conhecendo o dinheiro", "🛒 Módulo 2 · Fazendo escolhas", "🐷 Módulo 3 · Guardando dinheiro", "🌱 Módulo 4 · Fazendo o dinheiro crescer", "⚠️ Módulo 5 · Cuidado com as dívidas", "🍋 Módulo 6 · Ganhando e empreendendo"];
@@ -378,6 +387,7 @@ const salvarProg = () => { try { localStorage.setItem("fin_progresso", String(pr
 
 const fin = document.getElementById("fin");
 function finLista() {
+  EST.fin = null; salvarEst();
   const feitas = Math.min(progresso, LICOES.length);
   let h = `<div class="fin-topo"><div class="fin-barra"><div style="width:${feitas / LICOES.length * 100}%"></div></div><div class="fin-cont">${feitas} de ${LICOES.length} lições concluídas</div></div><div class="fin-lista">`;
   LICOES.forEach((l, k) => {
@@ -389,9 +399,19 @@ function finLista() {
   h += `</div><button class="fin-zerar" id="finZerar">Recomeçar as lições</button>`;
   fin.innerHTML = h;
   fin.querySelectorAll(".fin-item:not([disabled])").forEach(b => b.onclick = () => finConto(Number(b.dataset.k)));
-  document.getElementById("finZerar").onclick = () => { progresso = 0; salvarProg(); finLista(); };
+  const zerar = document.getElementById("finZerar");
+  let confirmando = false, tempo;
+  zerar.onclick = () => {
+    if (!confirmando) {
+      confirmando = true; zerar.textContent = "Tem certeza? Toque de novo para apagar TODO o progresso"; zerar.style.color = "var(--errado)";
+      tempo = setTimeout(() => { confirmando = false; zerar.textContent = "Recomeçar as lições"; zerar.style.color = ""; }, 4000);
+      return;
+    }
+    clearTimeout(tempo); progresso = 0; salvarProg(); finLista();
+  };
 }
 function finConto(k) {
+  EST.fin = { k, tela: "conto" }; salvarEst();
   const l = LICOES[k];
   fin.innerHTML = `<div class="cartao fin-conto"><h2>${l.titulo}</h2><p>${l.conto}</p></div>
     <button class="fin-acao" id="finPraticar">Vamos praticar →</button><button class="fin-voltar" id="finVoltar">← Voltar às lições</button>`;
@@ -399,6 +419,7 @@ function finConto(k) {
   document.getElementById("finVoltar").onclick = finLista;
 }
 function finPergunta(k, q, acertou) {
+  EST.fin = { k, q, acertou, tela: "pergunta" }; salvarEst();
   const l = LICOES[k], pq = l.perguntas[q];
   fin.innerHTML = `<div class="cartao"><div class="fin-num">${l.titulo} · pergunta ${q + 1} de ${l.perguntas.length}</div><div class="fin-p">${pq.p}</div><div id="finMsg"></div></div>
     <div class="fin-ops" id="finOps"></div><button class="fin-acao" id="finProx" hidden></button>`;
@@ -421,6 +442,7 @@ function finPergunta(k, q, acertou) {
 function finFim(k, acertos) {
   const total = LICOES[k].perguntas.length, passou = acertos >= total - 1;
   if (passou && k === progresso) { progresso = k + 1; salvarProg(); }
+  EST.fin = null; salvarEst();
   fin.innerHTML = `<div class="cartao fin-conto"><div style="font-size:56px">${passou ? "🏆" : "💪"}</div>
     <h2>${acertos} de ${total} acertos</h2><p>${passou ? (k + 1 < LICOES.length ? "Parabéns! A próxima lição foi liberada." : "Parabéns! Você completou as 30 lições e já sabe cuidar do seu dinheiro! 🎓") : "Faltou pouquinho! Leia a historinha de novo e tente outra vez."}</p></div>
     <button class="fin-acao" id="finOk">${passou ? "Voltar às lições" : "Tentar de novo"}</button>`;
@@ -433,7 +455,26 @@ function aplicarModo() {
   blocosContas.forEach(e => e.hidden = din);
   if (din) { prox.hidden = true; fin.hidden = false; finLista(); } else { fin.hidden = true; nova(); }
 }
-nova();
+
+// Ao abrir: volta exatamente onde ela parou
+if (["contas", "problemas", "dinheiro"].includes(EST.modo)) modo = EST.modo;
+if (["+", "-", "x", "/", "mix"].includes(EST.op)) op = EST.op;
+if ([1, 2, 3].includes(EST.nivel)) nivel = EST.nivel;
+if (Array.isArray(EST.placar)) { [acertos, erros, seq] = EST.placar.map(n => Number(n) || 0); }
+document.getElementById("acertos").textContent = acertos;
+document.getElementById("erros").textContent = erros;
+document.getElementById("seq").textContent = seq;
+document.getElementById("estrelas").textContent = "⭐".repeat(Math.min(seq, 10));
+document.querySelectorAll("#modos .modo").forEach(x => x.classList.toggle("on", x.dataset.m === modo));
+document.querySelectorAll("#ops .op").forEach(x => x.classList.toggle("on", x.dataset.op === op));
+document.querySelectorAll("#niveis .nivel").forEach(x => x.classList.toggle("on", Number(x.dataset.n) === nivel));
+const ondeParou = EST.fin;
+aplicarModo();
+if (modo === "dinheiro" && ondeParou && LICOES[ondeParou.k] && ondeParou.k <= progresso) {
+  const l = LICOES[ondeParou.k];
+  if (ondeParou.tela === "pergunta" && l.perguntas[ondeParou.q]) finPergunta(ondeParou.k, ondeParou.q, Number(ondeParou.acertou) || 0);
+  else finConto(ondeParou.k);
+}
 </script>
 </body>
 </html>
