@@ -59,6 +59,11 @@
   .fin-op { font-size: 19px !important; padding: 14px !important; text-align: left; }
   .fin-acao { font: 700 20px var(--fonte); padding: 14px; border: 0; border-radius: 16px; background: var(--azul); color: #fff; cursor: pointer; }
   .fin-voltar, .fin-zerar { font: 600 16px var(--fonte); padding: 10px; border: 0; border-radius: 12px; background: transparent; color: var(--suave); cursor: pointer; }
+  .nuvem { font: 500 14px var(--fonte); color: var(--suave); text-align: center; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
+  .nuvem form { display: flex; gap: 6px; }
+  .nuvem input { font: 600 16px var(--fonte); padding: 8px 12px; border: 2px solid #dfe5fb; border-radius: 12px; width: 150px; }
+  .nuvem form button { font: 700 16px var(--fonte); padding: 8px 14px; border: 0; border-radius: 12px; background: var(--azul); color: #fff; cursor: pointer; }
+  .nuvem #nuvemTrocar { font: 600 14px var(--fonte); border: 0; background: transparent; color: var(--azul); text-decoration: underline; cursor: pointer; padding: 0; }
   .wrap { overflow-y: auto; }
   body { overflow-y: auto; }
 </style>
@@ -66,6 +71,7 @@
 <body>
 <div class="wrap">
   <h1>Treino de Matemática</h1>
+  <div id="nuvem" class="nuvem"></div>
   <div class="linha" id="modos">
     <button class="modo on" data-m="contas">Contas</button>
     <button class="modo" data-m="problemas">Probleminhas</button>
@@ -101,7 +107,38 @@ const conta = document.getElementById("conta"), msg = document.getElementById("m
 // Salva onde ela parou (modo, placar e a lição/pergunta do Dinheiro)
 let EST = {};
 try { EST = JSON.parse(localStorage.getItem("treino_estado") || "{}") || {}; } catch (e) {}
-const salvarEst = () => { try { localStorage.setItem("treino_estado", JSON.stringify(EST)); } catch (e) {} };
+let restaurando = false;
+const salvarEst = () => { if (restaurando) return; EST.t = Date.now(); try { localStorage.setItem("treino_estado", JSON.stringify(EST)); } catch (e) {} subir(); };
+
+// ===== Nuvem: o mesmo progresso no computador, celular, tablet =====
+const API = "https://matematica-api-production.up.railway.app/p/";
+const limparNome = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "").slice(0, 40);
+let aluno = "", nomeBonito = "", tSubir = null, pedirReset = false, baixando = false;
+try {
+  const daUrl = new URLSearchParams(location.search).get("aluno");
+  nomeBonito = daUrl || localStorage.getItem("aluno_nome") || localStorage.getItem("aluno") || "";
+  aluno = limparNome(nomeBonito);
+  if (daUrl && aluno) { localStorage.setItem("aluno", aluno); localStorage.setItem("aluno_nome", daUrl); }
+} catch (e) {}
+function enviarAgora() {
+  if (!aluno || baixando) return;
+  clearTimeout(tSubir); tSubir = null;
+  const corpo = JSON.stringify({ progresso, est: EST, t: EST.t || Date.now(), reset: pedirReset });
+  pedirReset = false;
+  fetch(API + encodeURIComponent(aluno), { method: "PUT", headers: { "Content-Type": "application/json" }, body: corpo, keepalive: true })
+    .then(r => { if (!r.ok) throw 0; mostrarNuvem("ok"); })
+    .catch(() => mostrarNuvem("off"));
+}
+function subir(reset) {
+  if (reset) pedirReset = true;
+  if (!aluno || baixando) return;
+  clearTimeout(tSubir); tSubir = setTimeout(enviarAgora, 700);
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") { if (tSubir) enviarAgora(); }
+  else baixar();
+});
+window.addEventListener("pagehide", () => { if (tSubir) enviarAgora(); });
 try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
 const salvarContas = () => { EST.modo = modo; EST.op = op; EST.nivel = nivel; EST.placar = [acertos, erros, seq]; salvarEst(); };
 
@@ -383,7 +420,7 @@ LICOES.forEach((l,k)=>{ l.titulo = (k+1) + ". " + l.titulo; });
 
 let progresso = 0;
 try { progresso = Number(localStorage.getItem("fin_progresso") || 0); } catch (e) {}
-const salvarProg = () => { try { localStorage.setItem("fin_progresso", String(progresso)); } catch (e) {} };
+const salvarProg = () => { try { localStorage.setItem("fin_progresso", String(progresso)); } catch (e) {} salvarEst(); };
 
 const fin = document.getElementById("fin");
 function finLista() {
@@ -407,7 +444,7 @@ function finLista() {
       tempo = setTimeout(() => { confirmando = false; zerar.textContent = "Recomeçar as lições"; zerar.style.color = ""; }, 4000);
       return;
     }
-    clearTimeout(tempo); progresso = 0; salvarProg(); finLista();
+    clearTimeout(tempo); progresso = 0; subir(true); salvarProg(); finLista();
   };
 }
 function finConto(k) {
@@ -457,6 +494,8 @@ function aplicarModo() {
 }
 
 // Ao abrir: volta exatamente onde ela parou
+function restaurar() {
+restaurando = true;
 if (["contas", "problemas", "dinheiro"].includes(EST.modo)) modo = EST.modo;
 if (["+", "-", "x", "/", "mix"].includes(EST.op)) op = EST.op;
 if ([1, 2, 3].includes(EST.nivel)) nivel = EST.nivel;
@@ -475,6 +514,61 @@ if (modo === "dinheiro" && ondeParou && LICOES[ondeParou.k] && ondeParou.k <= pr
   if (ondeParou.tela === "pergunta" && l.perguntas[ondeParou.q]) finPergunta(ondeParou.k, ondeParou.q, Number(ondeParou.acertou) || 0);
   else finConto(ondeParou.k);
 }
+restaurando = false;
+}
+restaurar();
+
+// Busca o progresso salvo na nuvem e junta com o deste aparelho
+async function baixar() {
+  if (!aluno || baixando) return;
+  baixando = true;
+  try {
+    const r = await fetch(API + encodeURIComponent(aluno), { cache: "no-store" });
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    baixando = false;
+    if (!d) { salvarEst(); mostrarNuvem("ok"); return; }
+    const remotoMaisNovo = (Number(d.t) || 0) > (Number(EST.t) || 0);
+    const progRemoto = Number(d.progresso) || 0;
+    if (remotoMaisNovo) {
+      progresso = progRemoto;
+      EST = Object.assign({}, d.est || {}, { t: d.t });
+      try { localStorage.setItem("fin_progresso", String(progresso)); localStorage.setItem("treino_estado", JSON.stringify(EST)); } catch (e) {}
+      restaurar();
+      mostrarNuvem("ok");
+    } else if (progresso > progRemoto || (Number(EST.t) || 0) > (Number(d.t) || 0)) {
+      subir();
+    } else mostrarNuvem("ok");
+  } catch (e) { baixando = false; mostrarNuvem("off"); }
+}
+
+// Barrinha do nome: digita uma vez em cada aparelho
+const nuvem = document.getElementById("nuvem");
+function mostrarNuvem(estado) {
+  if (!aluno) {
+    nuvem.innerHTML = `<span>Para continuar de onde parou em qualquer aparelho, digite seu nome:</span>
+      <form id="nuvemForm"><input id="nuvemNome" placeholder="Seu nome" autocomplete="off" maxlength="30"><button>Salvar</button></form>`;
+    document.getElementById("nuvemForm").onsubmit = ev => {
+      ev.preventDefault();
+      const n = document.getElementById("nuvemNome").value.trim();
+      if (!limparNome(n)) return;
+      nomeBonito = n; aluno = limparNome(n);
+      try { localStorage.setItem("aluno", aluno); localStorage.setItem("aluno_nome", n); } catch (e) {}
+      mostrarNuvem("..."); baixar();
+    };
+    return;
+  }
+  const txt = estado === "off" ? "⚠️ Sem internet: salvo só neste aparelho por enquanto" : (estado === "..." ? "☁️ Carregando…" : "☁️ Progresso salvo na nuvem");
+  nuvem.innerHTML = `<span>${txt} · <b></b></span> <button id="nuvemTrocar" type="button">trocar</button>`;
+  nuvem.querySelector("b").textContent = nomeBonito || aluno;
+  document.getElementById("nuvemTrocar").onclick = () => {
+    aluno = ""; nomeBonito = "";
+    try { localStorage.removeItem("aluno"); localStorage.removeItem("aluno_nome"); } catch (e) {}
+    mostrarNuvem();
+  };
+}
+mostrarNuvem(aluno ? "..." : "");
+baixar();
 </script>
 </body>
 </html>
